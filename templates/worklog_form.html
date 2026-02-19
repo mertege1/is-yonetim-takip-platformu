@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-6 col-lg-5">
+        <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+            <div class="card-header bg-primary text-white py-3 px-4 border-0">
+                <h5 class="fw-bold mb-1"><i class="fas fa-edit me-2"></i>{{ page_title }}</h5>
+                <small class="opacity-75">Görev: {{ task.title|truncatechars:40 }}</small>
+            </div>
+            
+            <div class="card-body p-4 bg-white">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger small">{{ form.non_field_errors }}</div>
+                    {% endif %}
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-muted text-uppercase">Süre (Saat)</label>
+                            {{ form.hours }}
+                            <div class="text-danger small mt-1">{{ form.hours.errors }}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-muted text-uppercase">Tarih</label>
+                            {{ form.date }}
+                            <div class="text-danger small mt-1">{{ form.date.errors }}</div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-bold small text-muted text-uppercase">Yapılan İşin Özeti</label>
+                            {{ form.description }}
+                            <div class="text-danger small mt-1">{{ form.description.errors }}</div>
+                        </div>
+                    </div>
+
+                    <hr class="my-4 border-light">
+                    
+                    <div class="d-flex gap-2 justify-content-end">
+                        <a href="{% url 'task_detail' task.pk %}" class="btn btn-light border rounded-pill px-4 fw-bold text-muted">İptal</a>
+                        <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm">
+                            <i class="fas fa-save me-2"></i>Değişiklikleri Kaydet
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

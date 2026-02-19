@@ -1,0 +1,940 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* Genel Tasarım Değişkenleri */
+  :root {
+    --manager-accent: #dc3545;
+    --card-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+    --radius: 16px;
+    --transition: 0.25s ease;
+  }
+
+  /* Sayfa Genişliği Ayarı */
+  .page-shell {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  /* Kart Üst Vurgu Çizgileri */
+  .card-accent {
+    position: relative;
+  }
+  .card-accent::before {
+    content: "";
+    position: absolute;
+    top: 0; 
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: var(--accent, var(--manager-accent));
+    border-top-left-radius: var(--radius);
+    border-top-right-radius: var(--radius);
+  }
+  .card-accent-danger { --accent: #dc3545; }
+  .card-accent-warning { --accent: #f59e0b; }
+  .card-accent-success { --accent: #198754; }
+  .card-accent-info { --accent: #0dcaf0; }
+  .card-accent-primary { --accent: #0d6efd; }
+  .card-accent-dark { --accent: #0f172a; }
+
+  /* Dashboard Kart Tasarımı */
+  .dashboard-card {
+    border: none;
+    border-radius: var(--radius);
+    box-shadow: var(--card-shadow);
+    transition: transform var(--transition), box-shadow var(--transition);
+    background-color: #ffffff;
+    margin-bottom: 24px;
+  }
+  .dashboard-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.08);
+  }
+
+  /* Tıklanabilir KPI Kartı Link Yapısı */
+  .kpi-link {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    border-radius: 16px;
+  }
+  .kpi-link:focus-visible {
+    outline: 3px solid rgba(13,110,253,0.35);
+    outline-offset: 3px;
+  }
+
+  /* Filtreleme ve Araç Çubuğu */
+  .toolbar-container {
+    background-color: #f8fafc;
+    border-radius: 50px;
+    padding: 6px;
+    border: 1px solid #e2e8f0;
+    display: inline-flex;
+    overflow: visible;
+  }
+  .btn-filter {
+    border: none;
+    background: transparent;
+    color: #64748b;
+    font-size: 0.8rem;
+    padding: 8px 16px;
+    font-weight: 600;
+    border-radius: 50px;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn-filter:hover { 
+    color: var(--manager-accent); 
+    background-color: #ffffff; 
+  }
+  .btn-filter.active {
+    background-color: #ffffff;
+    color: var(--manager-accent);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+  }
+
+  /* Tarih Seçici Açılır Menü */
+  .date-dd {
+    min-width: 320px;
+    max-width: 92vw;
+    border-radius: 14px;
+  }
+
+  /* Tablo Görünümü */
+  .table-modern thead th {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #94a3b8;
+    background-color: #fcfdfe;
+    padding: 20px;
+    border-bottom: 2px solid #f1f5f9;
+  }
+  .table-modern tbody td {
+    padding: 18px 20px;
+    vertical-align: middle;
+    border-bottom: 1px solid #f1f5f9;
+    color: #334155;
+  }
+  .table-modern tbody tr:last-child td { 
+    border-bottom: none; 
+  }
+
+  /* Kullanıcı Avatar Kutusu */
+  .avatar-box {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    color: #475569;
+  }
+
+  /* Sekme (Tab) Tasarımı */
+  .nav-tabs .nav-link {
+    border: none;
+    color: #6c757d;
+    font-weight: 600;
+    padding: 1rem 1.25rem;
+    transition: color 0.2s;
+  }
+  .nav-tabs .nav-link:hover { color: var(--manager-accent); }
+  .nav-tabs .nav-link.active {
+    color: var(--manager-accent);
+    border-bottom: 3px solid var(--manager-accent);
+    background: transparent;
+  }
+  .nav-tabs { 
+    border-bottom: 1px solid #f1f5f9; 
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-shell">
+
+  <div class="row mb-5 align-items-center">
+    <div class="col-md-7">
+      <h1 class="fw-extrabold text-dark mb-1 h2">Hoş Geldiniz, {{ user.first_name }}</h1>
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-0">
+          <li class="breadcrumb-item text-primary fw-bold"><i class="fas fa-home me-1"></i> Dashboard</li>
+          <li class="breadcrumb-item active text-muted">{{ today|date:"d F Y" }}</li>
+        </ol>
+      </nav>
+    </div>
+
+    <div class="col-md-5 text-md-end mt-4 mt-md-0">
+      <div class="d-flex justify-content-md-end gap-2 flex-wrap flex-md-nowrap">
+        <a href="{% url 'task_history' %}" class="btn btn-outline-secondary shadow-sm px-4 rounded-3 fw-bold">
+          <i class="fas fa-history me-2"></i>Arşiv
+        </a>
+
+        <button type="button" class="btn btn-outline-danger shadow-sm px-4 rounded-3 fw-bold"
+                data-bs-toggle="modal" data-bs-target="#todayTeamModal">
+          <i class="fas fa-calendar-check me-2"></i>Günlük Plan
+        </button>
+
+        <a href="{% url 'create_task' %}" class="btn btn-success shadow-sm px-4 rounded-3 fw-bold">
+          <i class="fas fa-plus-circle me-2"></i>Yeni Görev Ata
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4 mb-5" id="kpiRow">
+    
+    <div class="col-md-3">
+      <div class="card card-accent card-accent-danger border-0 shadow-sm h-100" style="border-radius: 16px;">
+        <div class="card-body p-4">
+          <div class="d-flex align-items-center mb-3">
+            <div class="bg-danger bg-opacity-10 text-danger rounded-3 p-2 me-3">
+              <i class="fas fa-layer-group fa-lg"></i>
+            </div>
+            <h6 class="text-muted text-uppercase fw-bold mb-0" style="font-size: 0.75rem;">Aktif Görevler</h6>
+          </div>
+          <h2 class="fw-bold mb-0 text-dark" id="kpi-active-count">{{ active_tasks_count }}</h2>
+          <div class="small text-muted mt-1">Seçili kapsamın iş yükü</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="card card-accent card-accent-warning border-0 shadow-sm h-100" style="border-radius: 16px;">
+        <div class="card-body p-4">
+          <div class="d-flex align-items-center mb-3">
+            <div class="bg-warning bg-opacity-10 text-warning rounded-3 p-2 me-3">
+              <i class="fas fa-hourglass-half fa-lg"></i>
+            </div>
+            <h6 class="text-muted text-uppercase fw-bold mb-0" style="font-size: 0.75rem;">Kalan Efor</h6>
+          </div>
+          <h2 class="fw-bold mb-0 text-dark">
+            ~<span id="kpi-remaining-hours">{{ total_remaining_hours }}</span> <small class="fs-6">Saat</small>
+          </h2>
+          <div class="small text-muted mt-1">Tamamlanması gereken</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="card card-accent card-accent-success border-0 shadow-sm h-100" style="border-radius: 16px;">
+        <div class="card-body p-4">
+          <div class="d-flex align-items-center mb-3">
+            <div class="bg-success bg-opacity-10 text-success rounded-3 p-2 me-3">
+              <i class="fas fa-check-double fa-lg"></i>
+            </div>
+            <h6 class="text-muted text-uppercase fw-bold mb-0" style="font-size: 0.75rem;">Tamamlanan Adım</h6>
+          </div>
+          <h2 class="fw-bold mb-0 text-dark" id="kpi-completed-steps">{{ total_completed_steps_agg }}</h2>
+          <div class="small text-muted mt-1">Toplam roadmap ilerlemesi</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      {% if urgent_task %}
+        <a href="{% url 'task_detail' urgent_task.pk %}" class="kpi-link" title="Göreve git">
+          <div class="card card-accent border-0 shadow-sm h-100" style="border-radius: 16px; --accent:#dc3545;">
+            <div class="card-body p-4">
+              <div class="d-flex align-items-center mb-3">
+                <div class="rounded-3 p-2 me-3 bg-danger bg-opacity-10 text-danger">
+                  <i class="fas fa-fire fa-lg"></i>
+                </div>
+                <h6 class="text-muted text-uppercase fw-bold mb-0" style="font-size: 0.75rem;">Kritik Görev</h6>
+              </div>
+
+              <h2 class="fw-bold mb-0 text-dark" id="kpi-urgent-date">{{ urgent_task.due_date|date:"d M" }}</h2>
+              <div class="small text-muted mt-1 text-truncate" id="kpi-urgent-title" title="{{ urgent_task.title }}">
+                {{ urgent_task.title }}
+              </div>
+
+              <div class="mt-2 d-flex align-items-center gap-2">
+                <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill" style="font-size: 0.65rem;">
+                  <i class="fas fa-exclamation-circle me-1"></i>Vade Yakın
+                </span>
+                <span class="small fw-bold text-danger ms-auto">Göreve Git <i class="fas fa-arrow-right ms-1"></i></span>
+              </div>
+            </div>
+          </div>
+        </a>
+      {% else %}
+        <div class="card card-accent border-0 shadow-sm h-100" style="border-radius: 16px; --accent:#198754;">
+          <div class="card-body p-4">
+            <div class="d-flex align-items-center mb-3">
+              <div class="rounded-3 p-2 me-3 bg-success bg-opacity-10 text-success">
+                <i class="fas fa-mug-hot fa-lg"></i>
+              </div>
+              <h6 class="text-muted text-uppercase fw-bold mb-0" style="font-size: 0.75rem;">Durum</h6>
+            </div>
+
+            <h2 class="fw-bold mb-0 text-dark" id="kpi-urgent-date">Rahat</h2>
+            <div class="small text-muted mt-1" id="kpi-urgent-title">Acil işiniz yok, keyfine bakın.</div>
+
+            <div class="mt-2">
+              <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill" style="font-size: 0.65rem;">
+                <i class="fas fa-check-circle me-1"></i>Her şey yolunda
+              </span>
+            </div>
+          </div>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if delayed_tasks %}
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="dashboard-card card-accent card-accent-danger rounded-4 overflow-hidden">
+        <div class="card-header bg-danger text-white py-3 px-4 d-flex align-items-center border-0">
+          <i class="fas fa-fire-alt me-2 fa-lg"></i>
+          <h6 class="mb-0 fw-bold">Kritik Durumdaki Görevler ({{ delayed_tasks|length }})</h6>
+        </div>
+        <div class="list-group list-group-flush">
+          {% for task in delayed_tasks %}
+          <div class="list-group-item d-flex justify-content-between align-items-center px-4 py-3 border-bottom">
+            <div class="d-flex align-items-center">
+              <div class="bg-danger-subtle text-danger rounded-circle p-2 me-3">
+                <i class="fas fa-exclamation-circle"></i>
+              </div>
+              <div>
+                <div class="fw-bold text-dark">{{ task.title }}</div>
+                <small class="text-muted">
+                  <i class="fas fa-user-edit me-1"></i> {{ task.assigned_to.get_full_name|default:task.assigned_to.username }}
+                  <span class="mx-2">|</span>
+                  <i class="far fa-calendar-times me-1"></i> {{ task.due_date|date:"d M" }}
+                </small>
+              </div>
+            </div>
+            <a href="{% url 'task_detail' task.pk %}" class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-bold">İncele</a>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="dashboard-card mb-5 card-accent card-accent-info">
+    <div class="card-header bg-white border-0 pt-4 pb-2 px-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+      <div>
+        <h5 class="fw-bold mb-0 text-dark">
+          <i class="fas fa-users-viewfinder me-2 text-info"></i>Ekip Görev Dağılımı
+        </h5>
+        <p class="text-muted small mb-0">Ekip üyelerinin güncel iş yüklerini ve yaklaşan teslim tarihlerini görüntüleyin.</p>
+      </div>
+      <div class="d-flex align-items-center gap-2">
+        <small class="text-muted fw-bold">Kişi:</small>
+        <select id="teamFocusSelect" class="form-select form-select-sm" style="min-width: 220px;">
+          <option value="all" selected>Tüm Ekip</option>
+          {% for g in team_task_groups %}
+            <option value="{{ g.member.id }}">{{ g.member.get_full_name|default:g.member.username }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <div class="card-body p-0 mt-3">
+      <div class="list-group list-group-flush" id="teamFocusAccordion">
+        {% for g in team_task_groups %}
+        <div class="list-group-item py-3 px-4 team-focus-item" data-member-id="{{ g.member.id }}">
+          
+          <button type="button"
+                  class="w-100 text-start bg-transparent border-0 p-0"
+                  data-bs-toggle="collapse"
+                  data-bs-target="#focus-{{ g.member.id }}"
+                  aria-expanded="false"
+                  aria-controls="focus-{{ g.member.id }}">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+              <div class="d-flex align-items-center gap-3">
+                <div class="avatar-box">
+                  {{ g.member.first_name|first|upper }}{{ g.member.last_name|first|upper }}
+                </div>
+                <div>
+                  <div class="fw-bold text-dark">{{ g.member.get_full_name|default:g.member.username }}</div>
+                  <div class="small text-muted">
+                    {% if g.next_due %}Sonraki vade: {{ g.next_due|date:"d M" }}{% else %}Aktif görev yok{% endif %}
+                  </div>
+                </div>
+              </div>
+
+              <div class="d-flex gap-2 align-items-center">
+                <span class="badge bg-primary-subtle text-primary border rounded-pill px-3 py-2 fw-bold">
+                  {{ g.count }} Aktif
+                </span>
+                {% if g.overdue %}
+                <span class="badge bg-danger-subtle text-danger border rounded-pill px-3 py-2 fw-bold">
+                  {{ g.overdue }} Gecikmiş
+                </span>
+                {% endif %}
+                {% if g.due_soon %}
+                <span class="badge bg-warning-subtle text-warning-emphasis border rounded-pill px-3 py-2 fw-bold">
+                  {{ g.due_soon }} Yakın
+                </span>
+                {% endif %}
+              </div>
+            </div>
+          </button>
+
+          <div id="focus-{{ g.member.id }}"
+               class="collapse mt-3"
+               data-bs-parent="#teamFocusAccordion">
+            {% if g.tasks %}
+              {% for t in g.tasks %}
+              <a href="{% url 'task_detail' t.pk %}"
+                 class="d-flex justify-content-between align-items-center text-decoration-none border rounded-3 px-3 py-2 mb-2">
+                <div class="fw-bold text-dark small">{{ t.title|truncatechars:60 }}</div>
+                <div class="small text-muted">
+                  <i class="far fa-clock me-1"></i>{{ t.due_date|date:"d M" }}
+                  <span class="ms-2 badge bg-light text-dark border">{{ t.get_status_display }}</span>
+                </div>
+              </a>
+              {% endfor %}
+            {% else %}
+              <div class="text-muted small fst-italic">Bu kişinin aktif görevi yok.</div>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="dashboard-card mb-4 card-accent card-accent-dark position-relative" style="z-index: 50;">
+    <div class="card-body p-4">
+      <div class="row g-4 align-items-end">
+        <div class="col-lg-4">
+          <label class="form-label small fw-bold text-muted text-uppercase mb-2">
+            <i class="fas fa-users me-1"></i>Analiz Odağı
+          </label>
+          <div class="input-group shadow-sm border rounded-3 overflow-hidden">
+            <span class="input-group-text bg-white border-0 text-muted ps-3"><i class="fas fa-filter"></i></span>
+            <select id="analyzeUserSelect" class="form-select border-0 ps-2 py-2 fw-bold">
+              <option value="all" {% if not selected_user_id %}selected{% endif %}>Tüm Ekip (Genel Kıyaslama)</option>
+              {% for emp in employees %}
+              <option value="{{ emp.id }}" {% if selected_user_id == emp.id %}selected{% endif %}>
+                {{ emp.get_full_name|default:emp.username }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <div class="col-lg-8">
+          
+          <div id="individualToolbar" class="{% if not selected_user_id %}d-none{% endif %}">
+            <div class="row g-3">
+              <div class="col-md-7">
+                <label class="form-label small fw-bold text-muted text-uppercase mb-2">Simülasyon Algoritması</label>
+                <div class="toolbar-container w-100 justify-content-between">
+                  <button type="button" onclick="updateChart('balanced')" id="btn-balanced" class="btn-filter">Dengeli</button>
+                  <button type="button" onclick="updateChart('priority_weighted')" id="btn-priority_weighted" class="btn-filter">Öncelik</button>
+                  <button type="button" onclick="updateChart('size_weighted')" id="btn-size_weighted" class="btn-filter">Büyüklük</button>
+                  <button type="button" onclick="updateChart('deadline_weighted')" id="btn-deadline_weighted" class="btn-filter">Vade</button>
+                </div>
+              </div>
+
+              <div class="col-md-5">
+                <label class="form-label small fw-bold text-muted text-uppercase mb-2">Zaman Aralığı</label>
+
+                <div class="toolbar-container w-100 justify-content-between align-items-center">
+                  <button type="button" onclick="updateRange('week')" id="btn-range-week" class="btn-filter">Hafta</button>
+                  <button type="button" onclick="updateRange('month')" id="btn-range-month" class="btn-filter">Ay</button>
+                  <button type="button" onclick="updateRange('year')" id="btn-range-year" class="btn-filter">Yıl</button>
+
+                  <div class="dropdown">
+                    <button type="button"
+                            id="btn-range-custom"
+                            class="btn-filter"
+                            data-bs-toggle="dropdown"
+                            data-bs-auto-close="outside"
+                            aria-expanded="false"
+                            title="Özel">
+                      <i class="fas fa-calendar-alt"></i> Özel
+                    </button>
+
+                    <div class="dropdown-menu p-3 shadow border-0 date-dd" id="customDateDropdown">
+                      <div class="row g-2">
+                        <div class="col-6">
+                          <label class="form-label small fw-bold text-muted mb-1">Başlangıç</label>
+                          <input type="date" class="form-control form-control-sm" id="customStartInput">
+                        </div>
+                        <div class="col-6">
+                          <label class="form-label small fw-bold text-muted mb-1">Bitiş</label>
+                          <input type="date" class="form-control form-control-sm" id="customEndInput">
+                        </div>
+                      </div>
+
+                      <button type="button" class="btn btn-danger btn-sm fw-bold w-100 mt-3" onclick="applyCustomDates()">
+                        Uygula
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div id="aggregateHint" class="{% if selected_user_id %}d-none{% endif %}">
+            <div class="alert alert-light mb-0 border-0 shadow-sm d-flex align-items-center rounded-3 py-2 px-3">
+              <i class="fas fa-info-circle text-info me-3 fa-lg"></i>
+              <span class="small text-muted">Bireysel simülasyon için soldan bir <strong>personel seçin</strong>. </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="dashboard-card mb-5 card-accent card-accent-danger">
+    <div class="card-header bg-white border-0 pt-4 pb-0 px-4 d-flex justify-content-between align-items-center">
+      <div>
+        <h5 class="fw-bold mb-1 text-dark" id="chartTitle">
+          {% if selected_user_id %}
+            <i class="fas fa-user-clock text-danger me-2"></i>{{ chart_context.user.get_full_name|default:chart_context.user.username }} Analizi
+          {% else %}
+            <i class="fas fa-chart-bar text-danger me-2"></i>Ekip Performans Kıyaslaması (Toplam)
+          {% endif %}
+        </h5>
+        <p class="text-muted small mb-0" id="chartSubtitle">
+          {% if selected_user_id %}
+            Kişinin kapasite kullanım simülasyonu.
+          {% else %}
+            Planlanan saatler ile girilen gerçek eforların karşılaştırması.
+          {% endif %}
+        </p>
+      </div>
+
+      <span id="algoBadgeWrap" class="{% if not selected_user_id %}d-none{% endif %}">
+        <span class="badge bg-light text-dark border px-3 py-2 rounded-pill fw-bold" id="algo-badge">
+          {{ current_strategy|default:"balanced" }} Algoritması
+        </span>
+      </span>
+    </div>
+
+    <div class="card-body p-4">
+      <div style="height: 400px; width: 100%; transition: opacity 0.3s ease;" id="chart-container">
+        <canvas id="mainChart"></canvas>
+      </div>
+
+      <div id="individualNote" class="mt-4 p-3 bg-light rounded-3 border-0 d-flex align-items-center {% if not selected_user_id %}d-none{% endif %}">
+        <i class="fas fa-lightbulb text-warning me-3 fa-lg"></i>
+        <span class="small text-muted"><strong>Not:</strong> Kırmızı alanlar 8 saatlik kapasite aşımını gösterir.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="dashboard-card card-accent card-accent-primary">
+    <div class="card-header bg-white border-bottom pt-3 px-4 pb-0">
+      <div class="d-flex align-items-center justify-content-between mb-2">
+        <h5 class="fw-bold mb-0 text-dark"><i class="fas fa-list-ul me-2 text-muted"></i>Tüm Görevlerin Genel Durumu</h5>
+        <span class="small text-muted" id="tableModeHint"></span>
+      </div>
+
+      <ul class="nav nav-tabs card-header-tabs" id="managerTaskTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button class="nav-link active" id="tab-focus-btn"
+                  data-bs-toggle="tab" data-bs-target="#tab-focus"
+                  type="button" role="tab" aria-controls="tab-focus" aria-selected="true">
+            <i class="fas fa-crosshairs me-2 text-danger"></i>Odaklan
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="tab-all-btn"
+                  data-bs-toggle="tab" data-bs-target="#tab-all"
+                  type="button" role="tab" aria-controls="tab-all" aria-selected="false">
+            <i class="fas fa-list me-2"></i>Tümü
+          </button>
+        </li>
+      </ul>
+    </div>
+
+    <div class="card-body p-0">
+      <div class="tab-content">
+        
+        <div class="tab-pane fade show active" id="tab-focus" role="tabpanel" aria-labelledby="tab-focus-btn">
+          <div class="table-responsive">
+            <table class="table table-modern table-hover mb-0">
+              <thead>
+                <tr>
+                  <th class="ps-4">SORUMLU VE İŞ</th>
+                  <th>ÖNCELİK</th>
+                  <th>İLERLEME DURUMU</th>
+                  <th>TOPLAM EFOR</th>
+                  <th>VADE</th>
+                  <th class="text-end pe-4">İŞLEM</th>
+                </tr>
+              </thead>
+              <tbody id="tasksTableBodyFocus">
+                {% include "partials/manager_tasks_rows.html" with tasks=focus_tasks today=today %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="tab-pane fade" id="tab-all" role="tabpanel" aria-labelledby="tab-all-btn">
+          <div class="table-responsive">
+            <table class="table table-modern table-hover mb-0">
+              <thead>
+                <tr>
+                  <th class="ps-4">SORUMLU VE İŞ</th>
+                  <th>ÖNCELİK</th>
+                  <th>İLERLEME DURUMU</th>
+                  <th>TOPLAM EFOR</th>
+                  <th>VADE</th>
+                  <th class="text-end pe-4">İŞLEM</th>
+                </tr>
+              </thead>
+              <tbody id="tasksTableBodyAll">
+                {% include "partials/manager_tasks_rows.html" with tasks=tasks today=today %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <input type="hidden" id="custom-start" value="{{ start_date_val }}">
+  <input type="hidden" id="custom-end" value="{{ end_date_val }}">
+
+  {{ chart_context.type|json_script:"chart-type" }}
+  {{ chart_context.labels|json_script:"chart-labels" }}
+  {{ chart_context.data|json_script:"chart-individual-data" }}
+  {{ chart_context.planned|json_script:"chart-aggregate-planned" }}
+  {{ chart_context.spent|json_script:"chart-aggregate-spent" }}
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  let myChart = null;
+  let currentUserId = '{{ selected_user_id|default:"all" }}';
+  let currentStrategy = '{{ current_strategy|default:"balanced" }}';
+  let currentRange = '{{ current_range|default:"month" }}';
+
+  // Arayüz (UI) Durum Yönetimi
+  function setAnalyzeUI(mode) {
+    const tb = document.getElementById('individualToolbar');
+    const hint = document.getElementById('aggregateHint');
+    const badgeWrap = document.getElementById('algoBadgeWrap');
+    const note = document.getElementById('individualNote');
+
+    if (mode === 'individual') {
+      tb.classList.remove('d-none');
+      hint.classList.add('d-none');
+      badgeWrap.classList.remove('d-none');
+      note.classList.remove('d-none');
+    } else {
+      tb.classList.add('d-none');
+      hint.classList.remove('d-none');
+      badgeWrap.classList.add('d-none');
+      note.classList.add('d-none');
+    }
+  }
+
+  // Bireysel Analiz Grafiği Oluşturma
+  function buildIndividualChart(ctx, labels, data) {
+    return new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Tahmini İş Yükü (Saat)',
+          data,
+          backgroundColor: data.map(v => v > 8 ? 'rgba(220, 53, 69, 0.75)' : 'rgba(13, 110, 253, 0.7)'),
+          borderColor: data.map(v => v > 8 ? '#dc3545' : '#0d6efd'),
+          borderWidth: 1,
+          borderRadius: 6,
+          barPercentage: 0.6
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { beginAtZero: true, title: { display: true, text: 'Saat / Gün' } },
+          x: { grid: { display: false } }
+        }
+      }
+    });
+  }
+
+  // Ekip Geneli (Aggregate) Grafiği Oluşturma
+  function buildAggregateChart(ctx, labels, planned, spent) {
+    return new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          { label: 'Planlanan Toplam', data: planned, backgroundColor: 'rgba(71, 85, 105, 0.7)', borderRadius: 4 },
+          { label: 'Gerçekleşen (Efor)', data: spent, backgroundColor: 'rgba(220, 53, 69, 0.7)', borderRadius: 4 }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: { y: { beginAtZero: true, title: { display: true, text: 'Toplam Saat' } } }
+      }
+    });
+  }
+
+  // Özel Tarih Seçici Yardımcı Fonksiyonları
+  function syncCustomInputsFromHidden() {
+    const hs = document.getElementById('custom-start')?.value || '';
+    const he = document.getElementById('custom-end')?.value || '';
+    const sEl = document.getElementById('customStartInput');
+    const eEl = document.getElementById('customEndInput');
+    if (sEl) sEl.value = hs;
+    if (eEl) eEl.value = he;
+  }
+
+  function closeCustomDropdown() {
+    const btn = document.getElementById('btn-range-custom');
+    if (!btn) return;
+    try { bootstrap.Dropdown.getOrCreateInstance(btn).hide(); } catch(e) {}
+  }
+
+  function updateButtonStyles() {
+    document.querySelectorAll('.btn-filter').forEach(btn => btn.classList.remove('active'));
+    document.getElementById(`btn-${currentStrategy}`)?.classList.add('active');
+
+    if (currentRange === 'custom') {
+      document.getElementById('btn-range-custom')?.classList.add('active');
+    } else {
+      document.getElementById(`btn-range-${currentRange}`)?.classList.add('active');
+    }
+  }
+
+  // AJAX ile Veri Güncelleme ve Çizim
+  async function fetchAndUpdateAnalyze() {
+    const start = document.getElementById('custom-start')?.value;
+    const end = document.getElementById('custom-end')?.value;
+
+    let url = `?user_id=${currentUserId}&strategy=${currentStrategy}&range=${currentRange}&ajax=true`;
+    if (currentRange === 'custom') url += `&start=${start}&end=${end}`;
+
+    window.history.pushState({}, '', url.replace('&ajax=true', ''));
+
+    const container = document.getElementById('chart-container');
+    container.style.opacity = '0.3';
+
+    const res = await fetch(url);
+    const data = await res.json();
+
+    const tbFocus = document.getElementById('tasksTableBodyFocus');
+    const tbAll = document.getElementById('tasksTableBodyAll');
+    if (tbFocus) tbFocus.innerHTML = data.table_rows_focus_html || '';
+    if (tbAll) tbAll.innerHTML = data.table_rows_all_html || '';
+
+    if (data.kpi) {
+      const a = document.getElementById('kpi-active-count');
+      const r = document.getElementById('kpi-remaining-hours');
+      const c = document.getElementById('kpi-completed-steps');
+      const ud = document.getElementById('kpi-urgent-date');
+      const ut = document.getElementById('kpi-urgent-title');
+
+      if (a) a.textContent = data.kpi.active_count ?? '0';
+      if (r) r.textContent = data.kpi.remaining_hours ?? '0';
+      if (c) c.textContent = data.kpi.completed_steps ?? '0';
+
+      if (ud) ud.textContent = data.kpi.urgent_due ? data.kpi.urgent_due : 'Rahat';
+      if (ut) ut.textContent = data.kpi.urgent_title ? data.kpi.urgent_title : 'Acil iş yok';
+    }
+
+    const titleEl = document.getElementById('chartTitle');
+    const subEl = document.getElementById('chartSubtitle');
+    const badge = document.getElementById('algo-badge');
+    const ctx = document.getElementById('mainChart').getContext('2d');
+
+    if (data.mode === 'individual') {
+      setAnalyzeUI('individual');
+      updateButtonStyles();
+
+      titleEl.innerHTML = `<i class="fas fa-user-clock text-danger me-2"></i>${data.user_name} Analizi`;
+      subEl.textContent = `Kişinin kapasite kullanım simülasyonu.`;
+
+      const names = { 'balanced': 'Dengeli', 'priority_weighted': 'Öncelik', 'size_weighted': 'Büyüklük', 'deadline_weighted': 'Vade' };
+      if (badge) badge.textContent = (names[data.strategy] || 'Dengeli') + ' Algoritması';
+
+      if (myChart) myChart.destroy();
+      myChart = buildIndividualChart(ctx, data.labels || [], data.data || []);
+    } else {
+      setAnalyzeUI('aggregate');
+
+      titleEl.innerHTML = `<i class="fas fa-chart-bar text-danger me-2"></i>Ekip Performans Kıyaslaması (Toplam)`;
+      subEl.textContent = `Planlanan saatler ile girilen gerçek eforların karşılaştırması.`;
+
+      if (myChart) myChart.destroy();
+      myChart = buildAggregateChart(ctx, data.labels || [], data.planned || [], data.spent || []);
+    }
+
+    container.style.opacity = '1';
+  }
+
+  // Grafik Güncelleme Tetikleyicileri
+  window.updateChart = (s) => {
+    if (currentUserId === 'all') return;
+    currentStrategy = s;
+    fetchAndUpdateAnalyze();
+  };
+
+  window.updateRange = (r) => {
+    if (currentUserId === 'all') return;
+    currentRange = r;
+    if (r !== 'custom') closeCustomDropdown();
+    updateButtonStyles();
+    fetchAndUpdateAnalyze();
+  };
+
+  window.applyCustomDates = () => {
+    if (currentUserId === 'all') return;
+
+    const s = document.getElementById('customStartInput')?.value;
+    const e = document.getElementById('customEndInput')?.value;
+    if (!s || !e) return;
+
+    if (s > e) {
+      alert("Başlangıç tarihi, bitiş tarihinden büyük olamaz.");
+      return;
+    }
+
+    document.getElementById('custom-start').value = s;
+    document.getElementById('custom-end').value = e;
+
+    currentRange = 'custom';
+    updateButtonStyles();
+    fetchAndUpdateAnalyze();
+    closeCustomDropdown();
+  };
+
+  // Ekip Odak Filtrelemesi
+  function applyTeamFocusFilter(val) {
+    const items = document.querySelectorAll('.team-focus-item');
+    items.forEach(it => {
+      const id = it.getAttribute('data-member-id');
+      if (val === 'all' || id === val) it.classList.remove('d-none');
+      else it.classList.add('d-none');
+    });
+
+    if (val !== 'all') {
+      const target = document.querySelector(`.team-focus-item[data-member-id="${val}"]`);
+      if (target) {
+        const collapseEl = target.querySelector('.collapse');
+        if (collapseEl) {
+          const c = bootstrap.Collapse.getOrCreateInstance(collapseEl, { toggle: false });
+          c.show();
+        }
+      }
+    }
+  }
+
+  // Sayfa Yüklendiğinde Çalışacaklar (Başlatıcı)
+  document.addEventListener('DOMContentLoaded', function () {
+    const chartType = JSON.parse(document.getElementById('chart-type').textContent);
+    const labels = JSON.parse(document.getElementById('chart-labels').textContent || "[]");
+    const ctx = document.getElementById('mainChart').getContext('2d');
+
+    if (chartType === 'individual') {
+      const data = JSON.parse(document.getElementById('chart-individual-data').textContent || "[]");
+      myChart = buildIndividualChart(ctx, labels, data);
+      setAnalyzeUI('individual');
+      updateButtonStyles();
+    } else {
+      const planned = JSON.parse(document.getElementById('chart-aggregate-planned').textContent || "[]");
+      const spent = JSON.parse(document.getElementById('chart-aggregate-spent').textContent || "[]");
+      myChart = buildAggregateChart(ctx, labels, planned, spent);
+      setAnalyzeUI('aggregate');
+    }
+
+    syncCustomInputsFromHidden();
+
+    const btnCustom = document.getElementById('btn-range-custom');
+    if (btnCustom) btnCustom.addEventListener('shown.bs.dropdown', syncCustomInputsFromHidden);
+
+    const analyzeSelect = document.getElementById('analyzeUserSelect');
+    if (analyzeSelect) {
+      analyzeSelect.addEventListener('change', () => {
+        currentUserId = analyzeSelect.value;
+        if (currentUserId === 'all') closeCustomDropdown();
+        updateButtonStyles();
+        fetchAndUpdateAnalyze();
+      });
+    }
+
+    const teamFocusSelect = document.getElementById('teamFocusSelect');
+    const saved = localStorage.getItem('teamFocusSelection') || 'all';
+    teamFocusSelect.value = saved;
+    applyTeamFocusFilter(saved);
+
+    teamFocusSelect.addEventListener('change', () => {
+      localStorage.setItem('teamFocusSelection', teamFocusSelect.value);
+      applyTeamFocusFilter(teamFocusSelect.value);
+    });
+
+    {% if show_today_modal %}
+      const modalEl = document.getElementById('todayTeamModal');
+      if (modalEl) bootstrap.Modal.getOrCreateInstance(modalEl).show();
+    {% endif %}
+  });
+</script>
+
+<div class="modal fade" id="todayTeamModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+      <div class="modal-header bg-danger text-white border-0 py-3 px-4" style="border-radius: 20px 20px 0 0;">
+        <div>
+          <h5 class="modal-title fw-bold mb-0"><i class="fas fa-calendar-check me-2"></i>Bugünün Ekip Planı</h5>
+          <small class="opacity-75">{{ today|date:"l, d F Y" }}</small>
+        </div>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body p-0">
+        {% if today_tasks %}
+          <div class="list-group list-group-flush">
+            {% for t in today_tasks %}
+            <a href="{% url 'task_detail' t.pk %}" class="list-group-item list-group-item-action px-4 py-3">
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <div class="fw-bold text-dark">{{ t.title }}</div>
+                  <div class="small text-muted">
+                    <i class="fas fa-user me-1"></i>{{ t.assigned_to.get_full_name|default:t.assigned_to.username }}
+                    <span class="mx-2">|</span>
+                    <i class="far fa-clock me-1"></i>Vade: {{ t.due_date|date:"d M Y" }}
+                  </div>
+                </div>
+                <span class="badge bg-light text-dark border">{{ t.get_status_display }}</span>
+              </div>
+            </a>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="text-center py-5">
+            <p class="text-muted fw-bold mb-1">Bugün için aktif ekip görevi yok.</p>
+            <p class="text-muted small mb-0">Başlangıç-Bitiş (Start-Due) aralığı bugünü kapsayan görev bulunmadı.</p>
+          </div>
+        {% endif %}
+      </div>
+
+      <div class="modal-footer bg-light border-0 py-3 px-4" style="border-radius: 0 0 20px 20px;">
+        <button type="button" class="btn btn-secondary w-100 rounded-pill py-2 fw-bold" data-bs-dismiss="modal">
+          Kapat
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

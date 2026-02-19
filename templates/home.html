@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+
+{% block title %}Ana Sayfa{% endblock %}
+
+{% block content %}
+<div class="row">
+    
+    <div class="col-12 text-center mt-5">
+        <h1 class="display-4">Hoş Geldiniz, {{ user.first_name }}!</h1>
+        <p class="lead">Sisteme başarıyla giriş yaptınız.</p>
+        <hr class="my-4">
+        
+        <div class="alert alert-info d-inline-block">
+            <strong>Rolünüz:</strong> {{ user.get_role_display }} <br>
+            <strong>Ekibiniz:</strong> {{ user.get_team_display|default:"Belirtilmemiş" }}
+        </div>
+        
+        <div class="mt-4">
+            <p>Burada rolünüze uygun Dashboard (Panel) görüntülenecek.</p>
+            
+            {% if user.role == 'manager' %}
+                <button class="btn btn-danger">Yönetici Paneline Git</button>
+            {% else %}
+                <button class="btn btn-success">Çalışan Görevlerine Git</button>
+            {% endif %}
+            
+        </div>
+    </div>
+    
+</div>
+{% endblock %}

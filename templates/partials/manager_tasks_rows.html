@@ -1,0 +1,71 @@
+{% for task in tasks %}
+<tr>
+  <td class="ps-4">
+    <div class="d-flex align-items-center">
+      <div class="avatar-box me-3">
+        {{ task.assigned_to.first_name|first|upper }}{{ task.assigned_to.last_name|first|upper }}
+      </div>
+      <div>
+        <div class="fw-bold text-dark lh-1">{{ task.title|truncatechars:40 }}</div>
+        <small class="text-muted" style="font-size: 0.7rem;">
+          {{ task.assigned_to.get_full_name|default:task.assigned_to.username }}
+        </small>
+      </div>
+    </div>
+  </td>
+
+  <td>
+    {% if task.priority == 'yuksek' %}
+      <span class="badge bg-danger-subtle text-danger rounded-pill px-3">Yüksek</span>
+    {% elif task.priority == 'orta' %}
+      <span class="badge bg-warning-subtle text-warning-emphasis rounded-pill px-3">Orta</span>
+    {% else %}
+      <span class="badge bg-success-subtle text-success rounded-pill px-3">Düşük</span>
+    {% endif %}
+  </td>
+
+  <td style="min-width: 150px;">
+    <div class="d-flex justify-content-between mb-1">
+      <small class="fw-bold">{{ task.progress_pct_raw|default:0 }}% (Saat)</small>
+      <small class="text-muted">{{ task.get_status_display }}</small>
+    </div>
+    <div class="progress progress-sm mb-1">
+      <div class="progress-bar {% if task.spent_hours > task.planned_hours %}bg-danger{% else %}bg-primary{% endif %}"
+           style="width: {{ task.progress_pct_bar|default:0 }}%"></div>
+    </div>
+
+    {% if task.total_steps > 0 %}
+    <div class="d-flex align-items-center gap-2 mt-1" title="Adım İlerlemesi">
+        <div class="progress flex-grow-1" style="height: 3px; background-color: #e9ecef;">
+            <div class="progress-bar bg-warning" 
+                 role="progressbar" 
+                 style="width: {% widthratio task.completed_steps task.total_steps 100 %}%"></div>
+        </div>
+        <span class="text-muted" style="font-size: 0.6rem;">
+            {{ task.completed_steps }}/{{ task.total_steps }}
+        </span>
+    </div>
+    {% endif %}
+</td>
+
+  <td>
+    <span class="fw-bold text-dark">{{ task.spent_hours|default:"0"|floatformat:1 }}</span>
+    <small class="text-muted">/ {{ task.planned_hours|floatformat:1 }} sa</small>
+  </td>
+
+  <td>
+    <span class="small {% if task.due_date < today %}text-danger fw-bold{% else %}text-muted{% endif %}">
+      <i class="far fa-clock me-1"></i>{{ task.due_date|date:"d M" }}
+    </span>
+  </td>
+
+  <td class="text-end pe-4">
+    <a href="{% url 'task_detail' task.pk %}"
+       class="btn btn-sm btn-link text-primary text-decoration-none fw-bold">Detay &rarr;</a>
+  </td>
+</tr>
+{% empty %}
+<tr>
+  <td colspan="6" class="text-center py-5 text-muted">Bu görünüm için görev bulunamadı.</td>
+</tr>
+{% endfor %}

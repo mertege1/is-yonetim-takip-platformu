@@ -1,0 +1,103 @@
+{# templates/partials/employee/workload_card.html #}
+
+<div class="row mb-5 mt-5">
+  <div class="col-12">
+    <div class="dashboard-card card-accent card-accent-primary">
+      <div class="card-header bg-white border-bottom py-4 px-4">
+        <div class="row align-items-center g-4">
+          <div class="col-lg-5">
+            <h5 class="fw-bold mb-1 text-dark">
+              <i class="fas fa-chart-area text-primary me-2"></i>Çalışma Dağılım Tahmini
+            </h5>
+            <p class="text-muted small mb-0">Seçilen algoritmaya göre kapasite kullanım simülasyonu.</p>
+          </div>
+
+          <div class="col-lg-7">
+            <div class="d-flex flex-wrap justify-content-lg-end align-items-center gap-3">
+
+              {# ✅ Algoritma toolbar #}
+              <div class="toolbar-box d-flex">
+                <button type="button" onclick="updateChart('balanced')" id="btn-balanced" class="btn-filter active">
+                  <i class="fas fa-balance-scale"></i> Dengeli
+                </button>
+                <button type="button" onclick="updateChart('priority_weighted')" id="btn-priority_weighted" class="btn-filter">
+                  <i class="fas fa-flag"></i> Öncelik
+                </button>
+                <button type="button" onclick="updateChart('size_weighted')" id="btn-size_weighted" class="btn-filter">
+                  <i class="fas fa-expand-arrows-alt"></i> Büyüklük
+                </button>
+                <button type="button" onclick="updateChart('deadline_weighted')" id="btn-deadline_weighted" class="btn-filter">
+                  <i class="fas fa-hourglass-half"></i> Vade
+                </button>
+              </div>
+
+              {# ✅ Range toolbar + custom dropdown #}
+              <div class="toolbar-box d-flex align-items-center">
+                <button type="button" onclick="updateRange('week')" id="btn-range-week" class="btn-filter">Hafta</button>
+                <button type="button" onclick="updateRange('month')" id="btn-range-month" class="btn-filter active">Ay</button>
+                <button type="button" onclick="updateRange('year')" id="btn-range-year" class="btn-filter">Yıl</button>
+
+                <div class="dropdown">
+                  <button
+                    type="button"
+                    id="btn-range-custom"
+                    class="btn-filter"
+                    data-bs-toggle="dropdown"
+                    data-bs-auto-close="outside"
+                    aria-expanded="false"
+                    title="Özel Tarih"
+                  >
+                    <i class="fas fa-calendar-alt"></i> Özel
+                  </button>
+
+                  <div class="dropdown-menu p-3 shadow border-0 date-dd" id="customDateDropdown">
+                    <div class="row g-2">
+                      <div class="col-6">
+                        <label class="form-label small fw-bold text-muted mb-1">Başlangıç</label>
+                        <input type="date" class="form-control form-control-sm" id="customStartInput">
+                      </div>
+                      <div class="col-6">
+                        <label class="form-label small fw-bold text-muted mb-1">Bitiş</label>
+                        <input type="date" class="form-control form-control-sm" id="customEndInput">
+                      </div>
+                    </div>
+
+                    <button type="button" class="btn btn-primary btn-sm fw-bold w-100 mt-3" onclick="applyCustomDates()">
+                      Uygula
+                    </button>
+                  </div>
+                </div>
+              </div>
+              {# /RANGE TOOLBAR #}
+
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-body p-4">
+        <div style="height: 380px; width: 100%; transition: opacity 0.3s ease;" id="chart-container">
+          <canvas id="workloadChart"></canvas>
+        </div>
+
+        <div class="mt-4 p-4 bg-light rounded-4 border-0 d-flex align-items-center shadow-sm">
+          <div class="bg-primary text-white rounded-circle p-3 me-4 shadow">
+            <i class="fas fa-brain fa-lg"></i>
+          </div>
+          <div>
+            <h6 class="fw-bold text-dark mb-1">
+              Akıllı Planlama Notu:
+              <span id="chart-algo-name" class="text-primary">Dengeli</span>
+              Algoritması
+            </h6>
+            <p class="small text-muted mb-0">
+              Grafikteki <span class="text-danger fw-bold">kırmızı sütunlar</span>, günlük 8 saatlik yasal mesai kapasitenizi aştığınız günleri temsil eder.
+              Görevlerin başlangıç/bitiş tarihlerini revize etmeniz önerilir.
+            </p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

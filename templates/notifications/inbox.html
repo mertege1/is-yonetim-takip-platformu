@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+{% block title %}Bildirim Merkezi{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* Kapsayıcı genel tasarımı */
+  .inbox-shell {
+    border-radius: 18px;
+    background: #fff;
+    box-shadow: 0 4px 20px rgba(0,0,0,.05);
+    overflow: hidden;
+  }
+
+  /* Üst çubuk sabitleme */
+  .inbox-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: #fff;
+    border-bottom: 1px solid rgba(0,0,0,.06);
+  }
+
+  /* Kaydırılabilir bildirim alanı */
+  .notifications-scroll {
+    max-height: 70vh;
+    overflow-y: auto;
+  }
+
+  /* Kaydırma çubuğu (Scrollbar) görünümü */
+  .notifications-scroll::-webkit-scrollbar { width: 10px; }
+  .notifications-scroll::-webkit-scrollbar-track { background: transparent; }
+  .notifications-scroll::-webkit-scrollbar-thumb {
+    background: rgba(13,110,253,.25);
+    border-radius: 10px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+  .notifications-scroll::-webkit-scrollbar-thumb:hover {
+    background: rgba(13,110,253,.45);
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="inbox-shell">
+  
+  <div class="inbox-topbar p-3">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+      <div>
+        <h2 class="fw-bold mb-0">
+          <i class="fas fa-bell me-2 text-warning"></i>Bildirim Merkezi
+        </h2>
+        <div class="text-muted small">
+          Okunmamış: <span class="fw-bold">{{ unread_count }}</span>
+        </div>
+      </div>
+
+      <div class="d-flex align-items-center gap-2">
+        <form action="{% url 'notifications_mark_all_read' %}" method="post" class="m-0">
+          {% csrf_token %}
+          <button class="btn btn-sm btn-outline-secondary rounded-pill" type="submit">
+            <i class="fas fa-check-double me-1"></i>Tümünü okundu yap
+          </button>
+        </form>
+
+        <form action="{% url 'notifications_delete_all' %}" method="post" class="m-0"
+              onsubmit="return confirm('Tüm bildirimler silinsin mi?');">
+          {% csrf_token %}
+          <button class="btn btn-sm btn-outline-danger rounded-pill" type="submit">
+            <i class="fas fa-trash me-1"></i>Tümünü temizle
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="notifications-scroll">
+    {% if notifications %}
+      <div class="list-group list-group-flush">
+        {% for n in notifications %}
+          <div class="list-group-item d-flex justify-content-between align-items-start p-3">
+            
+            <div class="me-3 flex-grow-1">
+              <div class="fw-bold d-flex align-items-center gap-2">
+                {% if not n.is_read %}
+                  <span class="badge bg-danger">Yeni</span>
+                {% else %}
+                  <span class="badge bg-light text-dark border">Okundu</span>
+                {% endif %}
+                <span>{{ n.title }}</span>
+              </div>
+
+              {% if n.message %}
+                <div class="text-muted small mt-1">{{ n.message }}</div>
+              {% endif %}
+
+              <div class="text-muted small mt-2 d-flex align-items-center gap-2 flex-wrap">
+                <span><i class="far fa-clock me-1"></i>{{ n.created_at|date:"d M Y H:i" }}</span>
+                {% if n.actor %}
+                  <span class="text-muted">•</span>
+                  <span><i class="far fa-user me-1"></i>{{ n.actor.get_full_name|default:n.actor.username }}</span>
+                {% endif %}
+              </div>
+            </div>
+
+            <div class="d-flex align-items-start gap-2">
+              {% if n.url %}
+                <a class="btn btn-sm btn-outline-dark" href="{{ n.url }}" title="Detaya git">
+                  <i class="fas fa-arrow-right"></i>
+                </a>
+              {% endif %}
+
+              {% if not n.is_read %}
+                <form action="{% url 'notification_mark_read' n.id %}" method="post" class="m-0">
+                  {% csrf_token %}
+                  <button class="btn btn-sm btn-outline-primary" type="submit" title="Okundu işaretle">
+                    <i class="fas fa-check"></i>
+                  </button>
+                </form>
+              {% endif %}
+
+              <form action="{% url 'notification_delete' n.id %}" method="post" class="m-0"
+                    onsubmit="return confirm('Bu bildirimi silmek istiyor musun?');">
+                {% csrf_token %}
+                <button class="btn btn-sm btn-outline-danger" type="submit" title="Sil">
+                  <i class="fas fa-xmark"></i>
+                </button>
+              </form>
+            </div>
+            
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      
+      <div class="p-4 text-center text-muted">
+        <i class="fas fa-inbox fa-2x mb-2 opacity-50"></i>
+        <div class="fw-bold">Bildirim yok</div>
+        <div class="small">Yeni bildirimler burada görünecek.</div>
+      </div>
+      
+    {% endif %}
+  </div>
+</div>
+
+{% endblock %}

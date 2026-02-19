@@ -1,0 +1,211 @@
+{% extends 'base.html' %}
+
+{% block title %}Giriş Yap - İş Takip{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Giriş Sayfasına Özel Arka Plan (AYNI KALDI) */
+    body {
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .login-card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        overflow: hidden; /* Üstteki renkli çizgi için */
+    }
+
+    .card-header-line {
+        height: 6px;
+        background: linear-gradient(90deg, #0d6efd, #0dcaf0);
+        width: 100%;
+    }
+
+    .login-icon-box {
+        width: 80px;
+        height: 80px;
+        background-color: rgba(13, 110, 253, 0.1);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1.5rem;
+    }
+
+    .form-floating > .form-control:focus {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    }
+
+    .btn-login {
+        background: linear-gradient(90deg, #0d6efd, #0a58ca);
+        border: none;
+        padding: 12px;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        transition: all 0.3s ease;
+    }
+
+    .btn-login:hover {
+        background: linear-gradient(90deg, #0a58ca, #084298);
+        box-shadow: 0 4px 15px rgba(13, 110, 253, 0.4);
+    }
+
+    /* Şifre göster/gizle butonu */
+    .toggle-pass-btn {
+        position: absolute;
+        top: 50%;
+        right: 10px;
+        transform: translateY(-50%);
+        border-radius: 10px;
+        padding: 6px 10px;
+        font-weight: 700;
+        font-size: 0.8rem;
+    }
+
+    /* CapsLock uyarısı */
+    .capslock {
+        display: none;
+        font-size: 0.78rem;
+        color: #b45309;
+        margin-top: -6px;
+        margin-bottom: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container h-100 d-flex align-items-center justify-content-center" style="min-height: 80vh;">
+    <div class="row justify-content-center w-100">
+        <div class="col-md-6 col-lg-4">
+
+            <div class="card login-card bg-white">
+                <div class="card-header-line"></div>
+
+                <div class="card-body p-4 p-md-5">
+                    <div class="text-center mb-4">
+                        <div class="login-icon-box">
+                            <i class="fas fa-cube fa-3x text-primary"></i>
+                        </div>
+                        <h4 class="fw-bold text-dark">Hoş Geldiniz</h4>
+                        <p class="text-muted small">ASELSAN İş Yönetim Platformu</p>
+                    </div>
+
+                    <form method="post" id="loginForm" novalidate>
+                        {% csrf_token %}
+
+                        {# next param desteği (LoginView kullanıyorsan otomatik çalışır) #}
+                        {% if next %}
+                            <input type="hidden" name="next" value="{{ next }}">
+                        {% endif %}
+
+                        {% if form.errors %}
+                            <div class="alert alert-danger d-flex align-items-center mb-4" role="alert">
+                                <i class="fas fa-exclamation-circle me-2"></i>
+                                <div>Kullanıcı adı veya şifre hatalı.</div>
+                            </div>
+                        {% endif %}
+
+                        <!-- Floating Label: Kullanıcı Adı -->
+                        <div class="form-floating mb-3">
+                            <input
+                                type="text"
+                                name="username"
+                                class="form-control {% if form.username.errors %}is-invalid{% endif %}"
+                                id="id_username"
+                                placeholder="Kullanıcı Adı"
+                                required
+                                autofocus
+                                autocomplete="username"
+                                value="{{ form.username.value|default_if_none:'' }}"
+                            >
+                            <label for="id_username"><i class="fas fa-user me-2 text-muted"></i>Kullanıcı Adı</label>
+                            {% if form.username.errors %}
+                                <div class="invalid-feedback">{{ form.username.errors|striptags }}</div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Floating Label: Şifre -->
+                        <div class="form-floating mb-2 position-relative">
+                            <input
+                                type="password"
+                                name="password"
+                                class="form-control {% if form.password.errors %}is-invalid{% endif %}"
+                                id="id_password"
+                                placeholder="Şifre"
+                                required
+                                autocomplete="current-password"
+                            >
+                            <label for="id_password"><i class="fas fa-lock me-2 text-muted"></i>Şifre</label>
+
+                            <button type="button" class="btn btn-light toggle-pass-btn" id="togglePasswordBtn">
+                                Göster
+                            </button>
+
+                            {% if form.password.errors %}
+                                <div class="invalid-feedback">{{ form.password.errors|striptags }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="capslock" id="capsLockWarn">
+                            <i class="fas fa-triangle-exclamation me-1"></i>CapsLock açık 
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-login text-white rounded-3" id="loginBtn">
+                                GÜVENLİ GİRİŞ <i class="fas fa-sign-in-alt ms-2"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+
+
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  (function () {
+    const pwd = document.getElementById("id_password");
+    const btn = document.getElementById("togglePasswordBtn");
+    const caps = document.getElementById("capsLockWarn");
+
+    // Şifre göster/gizle
+    if (btn && pwd) {
+      btn.addEventListener("click", () => {
+        const isHidden = pwd.type === "password";
+        pwd.type = isHidden ? "text" : "password";
+        btn.textContent = isHidden ? "Gizle" : "Göster";
+        pwd.focus();
+      });
+
+      // CapsLock uyarısı
+      pwd.addEventListener("keyup", (e) => {
+        if (!caps) return;
+        const on = e.getModifierState && e.getModifierState("CapsLock");
+        caps.style.display = on ? "block" : "none";
+      });
+    }
+
+    // Submit double-post engelle + spinner
+    const form = document.getElementById("loginForm");
+    const loginBtn = document.getElementById("loginBtn");
+
+    if (form && loginBtn) {
+      form.addEventListener("submit", () => {
+        loginBtn.disabled = true;
+        loginBtn.innerHTML =
+          `<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>GİRİŞ YAPILIYOR…`;
+      });
+    }
+  })();
+</script>
+{% endblock %}

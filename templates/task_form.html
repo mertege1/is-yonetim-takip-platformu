@@ -1,0 +1,276 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* Sayfa Başlık Alanı (Hero) */
+  .page-hero {
+    background: linear-gradient(135deg, rgba(13,110,253,.12), rgba(13,202,240,.10));
+    border: 1px solid rgba(229,231,235,.9);
+    border-radius: 18px;
+    padding: 18px;
+  }
+  
+  /* Form Kart Tasarımı */
+  .card-soft {
+    border: 0;
+    border-radius: 18px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.06);
+  }
+  
+  /* Bölüm Başlıkları */
+  .section-title {
+    font-weight: 800;
+    color: #111827;
+    font-size: .95rem;
+    letter-spacing: -0.01em;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-title .ico {
+    width: 34px;
+    height: 34px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #e5e7eb;
+    background: #fff;
+    color: #0d6efd;
+  }
+  
+  /* Yardımcı Metinler ve Hata Mesajları */
+  .help-hint {
+    color: #64748b;
+    font-size: .82rem;
+  }
+  .field-errors {
+    color: #dc3545;
+    font-size: .8rem;
+    margin-top: 6px;
+  }
+  
+  /* Yol Haritası (Roadmap) Metin Alanı */
+  .roadmap-area textarea {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    line-height: 1.35;
+  }
+  
+  /* Üst Bilgi Rozetleri (Oluşturan, Ekip) */
+  .meta-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    background: #fff;
+    font-size: .85rem;
+    color: #111827;
+  }
+  .meta-pill .k {
+    color: #6b7280;
+    font-size: .75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+  }
+  .meta-pill .v {
+    font-weight: 700;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="page-hero mb-4">
+  <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap">
+    <div>
+      <div class="fw-bold text-dark" style="font-size:1.2rem;">
+        <i class="fas fa-clipboard-check text-primary me-2"></i>{{ page_title }}
+      </div>
+      <div class="text-muted small mt-1">
+        Zorunlu alanlar <span class="fw-bold">*</span> ile işaretlidir.
+      </div>
+
+      <div class="d-flex flex-wrap gap-2 mt-3">
+        <div class="meta-pill">
+          <span class="k">Oluşturan</span>
+          <span class="v">
+            {{ user.get_full_name|default:user.username }}
+            {% if user.title %} — {{ user.title }}{% else %} — -{% endif %}
+          </span>
+        </div>
+
+        <div class="meta-pill">
+          <span class="k">Ekip</span>
+          <span class="v">
+            {% if user.team %}{{ user.get_team_display }}{% else %}-{% endif %}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="d-flex gap-2">
+      <a href="{% url 'home' %}" class="btn btn-light border rounded-3">
+        <i class="fas fa-arrow-left me-2"></i>Geri
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-12 col-lg-8 col-xl-7">
+    <div class="card card-soft">
+      <div class="card-body p-4">
+
+        <form method="post" novalidate>
+          {% csrf_token %}
+
+          {% if form.errors %}
+            <div class="alert alert-danger border-0 rounded-4 d-flex align-items-start gap-3">
+              <div style="font-size:1.25rem;"><i class="fas fa-triangle-exclamation"></i></div>
+              <div>
+                <div class="fw-bold">Formda hatalar var</div>
+                <div class="small text-muted">Lütfen işaretli alanları düzeltip tekrar kaydedin.</div>
+                <div class="small mt-2">{{ form.non_field_errors }}</div>
+              </div>
+            </div>
+          {% endif %}
+
+          <div class="mb-4">
+            <div class="section-title">
+              <span class="ico"><i class="fas fa-file-signature"></i></span>
+              Temel Bilgiler
+            </div>
+
+            <div class="row g-3">
+              <div class="col-12">
+                <label class="form-label fw-semibold">İş Tanımı (Başlık)*</label>
+                {{ form.title }}
+                <div class="field-errors">{{ form.title.errors }}</div>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Atanan Kişi (Ad Soyad — Sicil)*</label>
+                {{ form.assigned_to }}
+                {% if user.role == 'employee' %}
+                  <div class="help-hint mt-1">Çalışanlar sadece kendilerine görev oluşturabilir.</div>
+                {% else %}
+                  <div class="help-hint mt-1">Sadece kendi ekibinizdeki çalışanlar listelenir.</div>
+                {% endif %}
+                <div class="field-errors">{{ form.assigned_to.errors }}</div>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Öncelik*</label>
+                {{ form.priority }}
+                <div class="field-errors">{{ form.priority.errors }}</div>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">İşin Durumu*</label>
+                {{ form.status }}
+                <div class="field-errors">{{ form.status.errors }}</div>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">İş Büyüklüğü (1-5)*</label>
+                {{ form.size }}
+                <div class="field-errors">{{ form.size.errors }}</div>
+              </div>
+
+              <div class="col-12">
+                <label class="form-label fw-semibold">Detaylı Açıklama</label>
+                {{ form.description }}
+                <div class="field-errors">{{ form.description.errors }}</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-4">
+            <div class="section-title">
+              <span class="ico"><i class="fas fa-calendar-days"></i></span>
+              Planlama
+            </div>
+
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Başlangıç Tarihi*</label>
+                {{ form.start_date }}
+                <div class="field-errors">{{ form.start_date.errors }}</div>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Tamamlanma Tarihi*</label>
+                {{ form.due_date }}
+                <div class="field-errors">{{ form.due_date.errors }}</div>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Planlanan İşçilik Süresi* (Adam×Saat)</label>
+                {{ form.planned_hours }}
+                <div class="field-errors">{{ form.planned_hours.errors }}</div>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Harcanan İşçilik Süresi (Otomatik)</label>
+                {{ form.spent_hours }}
+                <div class="help-hint mt-1">Çalışma girişleri ile otomatik güncellenir.</div>
+                <div class="field-errors">{{ form.spent_hours.errors }}</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-4 roadmap-area">
+            <div class="section-title">
+              <span class="ico"><i class="fas fa-list-ol"></i></span>
+              Yol Haritası*
+            </div>
+
+            {{ form.roadmap_summary }}
+            <div class="help-hint mt-2">
+              Her satır 1 adım olacak şekilde yazınız.
+            </div>
+            <div class="field-errors">{{ form.roadmap_summary.errors }}</div>
+          </div>
+
+          <div class="mb-4">
+            <div class="section-title">
+              <span class="ico"><i class="fas fa-users"></i></span>
+              Paydaşlar
+            </div>
+
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">İş Ortakları</label>
+                {{ form.partners }}
+                <div class="field-errors">{{ form.partners.errors }}</div>
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Bilgilendirilecek Kişiler</label>
+                {{ form.informees }}
+                <div class="field-errors">{{ form.informees.errors }}</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="d-flex gap-2 flex-wrap">
+            <button type="submit" class="btn btn-primary px-4 rounded-3 fw-bold">
+              <i class="fas fa-save me-2"></i>Kaydet
+            </button>
+            <a href="{% url 'home' %}" class="btn btn-light border px-4 rounded-3">
+              İptal
+            </a>
+          </div>
+
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,624 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Ortak Modern Kart Stili */
+    .dashboard-card {
+        border: none;
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        background-color: white;
+        transition: transform 0.2s;
+        overflow: hidden;
+    }
+
+    .work-log-item {
+        border-left: 4px solid #0d6efd;
+        background-color: #f8f9fa;
+        transition: all 0.2s;
+        border-radius: 8px;
+        margin-bottom: 12px;
+    }
+    .work-log-item:hover {
+        background-color: #fff;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        transform: translateX(2px);
+    }
+
+    .avatar-sm {
+        width: 36px;
+        height: 36px;
+        background-color: #e9ecef;
+        color: #495057;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.85rem;
+        font-weight: 700;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .btn-action {
+        border-radius: 50px;
+        padding: 8px 20px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+
+    .pill-person {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: #fff;
+        border: 1px solid rgba(0,0,0,.08);
+        border-radius: 999px;
+        padding: 6px 12px 6px 6px;
+        box-shadow: 0 2px 8px rgba(0,0,0,.03);
+    }
+    .pill-person .avatar-xs {
+        width: 28px; height: 28px;
+        border-radius: 999px;
+        display:flex; align-items:center; justify-content:center;
+        font-size:.75rem;
+        font-weight:800;
+    }
+    .muted-kv {
+        font-size: .78rem;
+        color: #6c757d;
+        line-height: 1.1;
+    }
+    .muted-kv strong {
+        color:#212529;
+    }
+
+    .roadmap-toggle-btn {
+        border:0;
+        background: transparent;
+        padding:0;
+    }
+    .roadmap-toggle-btn:focus {
+        outline: none;
+        box-shadow:none;
+    }
+
+    /* Kişi bazlı efor kartı */
+    .contrib-item {
+        padding: 10px 12px;
+        border: 1px solid rgba(0,0,0,.06);
+        border-radius: 14px;
+        background: #fff;
+    }
+    .contrib-avatar {
+        width: 34px;
+        height: 34px;
+        border-radius: 999px;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        font-weight: 800;
+        font-size: .8rem;
+        background: #eef2ff;
+        color: #0d6efd;
+        box-shadow: inset 0 2px 4px rgba(255,255,255,0.8);
+        flex: 0 0 auto;
+    }
+
+    /* İsim ve alt bilgi hizalaması */
+    .contrib-text { display:flex; flex-direction:column; min-width: 0; }
+    .contrib-title { font-size:.95rem; line-height:1.25; margin:0; }
+    .contrib-sub { font-size:.78rem; line-height:1.2; margin-top:3px; color:#6c757d; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+
+        <div class="dashboard-card mb-4">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center py-4 px-4 border-bottom">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="bg-primary-subtle text-primary p-3 rounded-circle">
+                        <i class="fas fa-tasks fa-lg"></i>
+                    </div>
+                    <div>
+                        <h4 class="mb-0 fw-bold text-dark">{{ task.title }}</h4>
+                        <small class="text-muted">
+                            Oluşturan:
+                            {{ task.created_by.get_full_name|default:task.created_by.username }}
+                            — {{ task.created_by.title|default:"-" }}
+                        </small>
+                    </div>
+                </div>
+                <div class="text-end">
+                    <span class="badge bg-{% if task.priority == 'yuksek' %}danger{% elif task.priority == 'orta' %}warning text-dark{% else %}success{% endif %} p-2 rounded-pill mb-1 d-block">
+                        {{ task.get_priority_display }} Öncelik
+                    </span>
+                </div>
+            </div>
+
+            <div class="card-body px-4 py-4">
+                <h6 class="text-uppercase text-muted small fw-bold mb-2">Görev Açıklaması</h6>
+                <div class="p-3 bg-light rounded-3 text-dark mb-4">
+                    {{ task.description|linebreaks|default:"Açıklama girilmemiş." }}
+                </div>
+
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-center p-3 border rounded-3 h-100">
+                            <i class="fas fa-user-check fa-2x text-primary me-3 opacity-50"></i>
+                            <div>
+                                <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.7rem;">Sorumlu Kişi</small>
+                                <strong class="text-dark">
+                                    {{ task.assigned_to.get_full_name|default:task.assigned_to.username }}
+                                    — {{ task.assigned_to.title|default:"-" }}
+                                </strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-center p-3 border rounded-3 h-100">
+                            <i class="far fa-calendar-alt fa-2x text-info me-3 opacity-50"></i>
+                            <div>
+                                <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.7rem;">Takvim</small>
+                                <span class="d-block lh-1">
+                                    {{ task.start_date|date:"d M" }} -
+                                    <span class="{% if task.due_date < today and task.status != 'tamamlandi' %}text-danger fw-bold{% endif %}">
+                                        {{ task.due_date|date:"d M Y" }}
+                                    </span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-center p-3 border rounded-3 h-100">
+                            <i class="fas fa-weight-hanging fa-2x text-warning me-3 opacity-50"></i>
+                            <div>
+                                <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.7rem;">İş Büyüklüğü</small>
+                                <strong class="text-dark">{{ task.get_size_display }}</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="my-4 opacity-10">
+
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <h6 class="text-uppercase text-muted small fw-bold mb-3">
+                            <i class="fas fa-user-friends me-2"></i>İş Ortakları
+                        </h6>
+                        <div class="d-flex flex-wrap gap-2">
+                            {% for partner in task.partners.all %}
+                                <div class="pill-person">
+                                    <div class="avatar-xs bg-info-subtle text-info">
+                                        {{ partner.first_name|first|default:partner.username|first|upper }}
+                                    </div>
+                                    <div class="d-flex flex-column">
+                                        <small class="fw-bold">
+                                            {{ partner.get_full_name|default:partner.username }}
+                                        </small>
+                                        <span class="muted-kv">Sicil/Ünvan: <strong>{{ partner.title|default:"-" }}</strong></span>
+                                    </div>
+                                </div>
+                            {% empty %}
+                                <span class="text-muted small fst-italic">İş ortağı atanmamış.</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <h6 class="text-uppercase text-muted small fw-bold mb-3">
+                            <i class="fas fa-bell me-2"></i>Bilgilendirilecekler
+                        </h6>
+                        <div class="d-flex flex-wrap gap-2">
+                            {% for info_user in task.informees.all %}
+                                <div class="pill-person">
+                                    <div class="avatar-xs bg-warning-subtle text-dark">
+                                        {{ info_user.first_name|first|default:info_user.username|first|upper }}
+                                    </div>
+                                    <div class="d-flex flex-column">
+                                        <small class="fw-bold">
+                                            {{ info_user.get_full_name|default:info_user.username }}
+                                        </small>
+                                        <span class="muted-kv">Sicil/Ünvan: <strong>{{ info_user.title|default:"-" }}</strong></span>
+                                    </div>
+                                </div>
+                            {% empty %}
+                                <span class="text-muted small fst-italic">Kimse seçilmemiş.</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-footer bg-light border-top py-3 px-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <a href="{% url 'home' %}" class="btn btn-outline-secondary btn-action border-0">
+                        <i class="fas fa-arrow-left me-2"></i>Geri Dön
+                    </a>
+
+                    <div class="d-flex gap-2">
+                        {% if user.role == 'manager' or task.created_by == user %}
+                            <a href="{% url 'delete_task' task.pk %}" class="btn btn-outline-danger btn-action"
+                               onclick="return confirm('Bu görevi silmek istediğinize emin misiniz?');">
+                                <i class="fas fa-trash-alt me-2"></i>Sil
+                            </a>
+                        {% endif %}
+
+                        {% if user.role == 'manager' or task.created_by == user or user == task.assigned_to or user in task.partners.all %}
+                            <a href="{% url 'update_task' task.pk %}" class="btn btn-warning btn-action text-dark">
+                                <i class="fas fa-edit me-2"></i>Düzenle
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-card mb-4">
+            <div class="card-header bg-white py-3 px-4 border-bottom">
+                <h6 class="mb-0 fw-bold text-dark">
+                    <i class="fas fa-history me-2 text-primary"></i>Çalışma Geçmişi (Efor Kayıtları)
+                </h6>
+            </div>
+
+            <div class="card-body p-4">
+                {% if work_logs %}
+                    <div class="timeline">
+                        {% for log in work_logs %}
+                            <div class="work-log-item p-3 mb-3">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-sm me-2 bg-primary text-white shadow-sm">
+                                            {{ log.user.first_name|first|default:log.user.username|first|upper }}
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold text-dark">
+                                                {{ log.user.get_full_name|default:log.user.username }}
+                                                — {{ log.user.title|default:"-" }}
+                                            </div>
+                                            <div class="text-muted small" style="font-size: 0.75rem;">
+                                                <i class="far fa-clock me-1"></i> {{ log.date|date:"d F Y" }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 rounded-pill">
+                                            <i class="fas fa-stopwatch me-1"></i> {{ log.hours|floatformat:1 }} Saat
+                                        </span>
+                                        
+                                        {% if request.user == log.user or request.user.role == 'manager' %}
+                                        <div class="d-flex gap-1">
+                                            <a href="{% url 'edit_worklog' log.pk %}" class="btn btn-sm btn-light text-muted border rounded-circle" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;" title="Düzenle">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <form action="{% url 'delete_worklog' log.pk %}" method="post" class="m-0" onsubmit="return confirm('Bu efor kaydını silmek istediğinize emin misiniz? Toplam süre otomatik güncellenecektir.');">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-sm btn-light text-danger border rounded-circle" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;" title="Sil">
+                                                    <i class="fas fa-trash-alt"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="bg-white p-2 rounded border-start border-3 border-light ps-3 text-secondary small">
+                                    {{ log.description }}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <div class="mb-3 opacity-25"><i class="fas fa-clipboard-list fa-3x"></i></div>
+                        <p class="text-muted fw-bold">Henüz bir çalışma kaydı girilmemiş.</p>
+                        <p class="text-muted small">İş ortağı veya sorumluysanız sağ taraftan "Efor Ekle" butonunu kullanabilirsiniz.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
+
+    <div class="col-lg-4">
+
+        <div class="dashboard-card mb-4 bg-gradient-primary text-white overflow-hidden"
+             style="background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);">
+            <div class="card-body p-4 text-center">
+                <h6 class="text-uppercase opacity-75 fw-bold mb-4" style="letter-spacing: 1px;">Çalışma Durumu</h6>
+
+                <div class="d-flex justify-content-center align-items-end gap-1 mb-2">
+                    <h1 class="display-4 fw-bold mb-0 text-white">
+                        {{ task.spent_hours|floatformat:1 }}
+                    </h1>
+                    <span class="fs-5 opacity-75 mb-2">/ {{ task.planned_hours|floatformat:1 }} sa</span>
+                </div>
+
+                {# Planlanan süre sıfır veya tanımlanmamışsa ilerleme yüzdesini sıfırla #}
+                {% if task.planned_hours and task.planned_hours > 0 %}
+                    {% widthratio task.spent_hours task.planned_hours 100 as progress_percent %}
+                {% else %}
+                    {% widthratio 0 1 100 as progress_percent %}
+                {% endif %}
+
+                <div class="progress bg-white bg-opacity-25 rounded-pill mb-3" style="height: 8px;">
+                    <div class="progress-bar bg-white rounded-pill"
+                         role="progressbar"
+                         style="width: {% if progress_percent > 100 %}100{% else %}{{ progress_percent }}{% endif %}%">
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between small opacity-75 px-2 mb-4">
+                    <span>Efor (Saat)</span>
+                    <span>%{{ progress_percent }}</span>
+                </div>
+
+                {# Adım sayısı sıfırdan büyükse ilerleme çubuğunu göster #}
+                {% if total_steps_real and total_steps_real > 0 %}
+                <div class="mb-4 pt-3 border-top border-white border-opacity-25">
+                    <div class="d-flex justify-content-between align-items-end mb-2">
+                        <span class="text-uppercase opacity-75 fw-bold" style="font-size: 0.75rem;">Adım İlerlemesi</span>
+                        <span class="small opacity-90 fw-bold">{{ completed_steps_count }} / {{ total_steps_real }}</span>
+                    </div>
+
+                    <div class="progress bg-white bg-opacity-25 rounded-pill" style="height: 6px;">
+                        <div class="progress-bar bg-warning rounded-pill"
+                             role="progressbar"
+                             style="width: {% widthratio completed_steps_count total_steps_count 100 %}%">
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="badge bg-white text-primary px-3 py-2 rounded-pill fw-bold mb-4">
+                    Durum: {{ task.get_status_display }}
+                </div>
+
+                {% if user == task.assigned_to or user in task.partners.all %}
+                    <div class="mt-2 pt-3 border-top border-white border-opacity-25">
+                        <button type="button"
+                                class="btn btn-light w-100 fw-bold py-2 rounded-pill shadow-sm text-primary"
+                                data-bs-toggle="modal" data-bs-target="#addWorkLogModal">
+                            <i class="fas fa-plus-circle me-2"></i>Çalışma (Efor) Ekle
+                        </button>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if user.role == 'manager' or user == task.assigned_to or user in task.partners.all %}
+        <div class="dashboard-card mb-4">
+            <div class="card-header bg-white py-3 px-4 border-bottom d-flex align-items-center justify-content-between">
+                <h6 class="mb-0 fw-bold text-dark">
+                    <i class="fas fa-users me-2 text-primary"></i>Çalışma Dağılımı (Kişi Bazlı)
+                </h6>
+                <small class="text-muted fw-bold">
+                    Toplam: {% if total_spent %}{{ total_spent|floatformat:1 }}{% else %}{{ task.spent_hours|floatformat:1 }}{% endif %} sa
+                </small>
+            </div>
+
+            <div class="card-body p-4">
+                {% if contribution_rows %}
+                    <div class="d-flex flex-column gap-2">
+                        {% for row in contribution_rows %}
+                        <div class="contrib-item">
+                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="contrib-avatar">
+                                        {{ row.name|first|upper }}
+                                    </div>
+                                    <div class="contrib-text">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="contrib-title fw-bold text-dark text-truncate" style="max-width: 160px;">
+                                                {{ row.name }}
+                                            </div>
+                                            {% if row.user_id == user.id %}
+                                                <span class="badge bg-primary-subtle text-primary">SEN</span>
+                                            {% endif %}
+                                        </div>
+                                        <div class="contrib-sub">
+                                            {{ row.hours|floatformat:1 }} sa • %{{ row.pct|floatformat:1 }}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-2">
+                                    {{ row.hours|floatformat:1 }} sa
+                                </span>
+                            </div>
+
+                            <div class="progress" style="height: 7px; background-color: #eef2f6;">
+                                <div class="progress-bar bg-primary"
+                                     role="progressbar"
+                                     style="width: {% if row.pct > 100 %}100{% else %}{{ row.pct }}{% endif %}%">
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <div class="mb-2 opacity-25"><i class="fas fa-chart-pie fa-2x"></i></div>
+                        <div class="text-muted small fw-bold">Henüz kişi bazlı efor verisi yok.</div>
+                        <div class="text-muted small">Efor girişi yapıldıkça burada dağılım görünecek.</div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="dashboard-card">
+            <div class="card-header bg-white py-3 px-4 border-bottom d-flex align-items-center justify-content-between">
+                <h6 class="mb-0 fw-bold text-dark">
+                    <i class="fas fa-map-signs me-2 text-info"></i>Yol Haritası
+                </h6>
+
+                {% if can_edit_roadmap %}
+                    <button type="button"
+                            class="btn btn-sm btn-outline-primary rounded-pill"
+                            data-bs-toggle="modal" data-bs-target="#editRoadmapModal">
+                        <i class="fas fa-pen me-1"></i>Düzenle
+                    </button>
+                {% endif %}
+            </div>
+
+            <div class="card-body p-0">
+                <ul class="list-group list-group-flush">
+                    {% for item in task.roadmap.all %}
+                        <li class="list-group-item d-flex align-items-start py-3 px-4 border-bottom-0 border-top">
+                            <div class="me-3 mt-1">
+                                {% if can_toggle_roadmap %}
+                                    <form method="post" action="{% url 'roadmap_toggle' task.pk item.pk %}">
+                                        {% csrf_token %}
+                                        <button type="submit" class="roadmap-toggle-btn" title="Tamamlandı / Açık olarak değiştir">
+                                            {% if item.is_completed %}
+                                                <i class="fas fa-check-circle text-success fa-lg"></i>
+                                            {% else %}
+                                                <span class="badge rounded-circle bg-light text-secondary border"
+                                                      style="width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;">
+                                                    {{ item.order }}
+                                                </span>
+                                            {% endif %}
+                                        </button>
+                                    </form>
+                                {% else %}
+                                    {% if item.is_completed %}
+                                        <i class="fas fa-check-circle text-success fa-lg"></i>
+                                    {% else %}
+                                        <span class="badge rounded-circle bg-light text-secondary border"
+                                              style="width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;">
+                                            {{ item.order }}
+                                        </span>
+                                    {% endif %}
+                                {% endif %}
+                            </div>
+
+                            <div class="flex-grow-1">
+                                <small class="fw-bold text-uppercase text-primary d-block mb-1" style="font-size: 0.65rem;">
+                                    Adım {{ item.order }}
+                                </small>
+                                <p class="mb-1 text-dark small lh-sm">{{ item.description }}</p>
+
+                                {% if item.estimated_duration %}
+                                    <span class="badge bg-light text-secondary border rounded-pill">
+                                        <i class="fas fa-hourglass-half me-1"></i>{{ item.estimated_duration|floatformat:1 }} sa
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </li>
+                    {% empty %}
+                        <li class="list-group-item text-center text-muted py-5 border-0">
+                            <i class="fas fa-route fa-2x mb-2 opacity-25"></i>
+                            <br>Yol haritası adımları girilmemiş.
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+{% if user == task.assigned_to or user in task.partners.all %}
+<div class="modal fade" id="addWorkLogModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+            <div class="modal-header bg-primary text-white border-0 py-3 px-4" style="border-radius: 20px 20px 0 0;">
+                <h5 class="modal-title fw-bold"><i class="fas fa-clock me-2"></i>Çalışma Kaydı Gir</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <form method="post">
+                {% csrf_token %}
+                <div class="modal-body p-4">
+                    <div class="alert alert-light border d-flex align-items-center mb-4" role="alert">
+                        <i class="fas fa-info-circle text-primary me-3 fa-lg"></i>
+                        <div class="small text-muted">
+                            Bu kayıt, görevin toplam süresine eklenecek ve kişisel performans grafiğinize yansıyacaktır.
+                        </div>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-uppercase text-muted">Süre (Saat)</label>
+                            {{ log_form.hours }}
+                            <div class="text-danger small">{{ log_form.hours.errors }}</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold small text-uppercase text-muted">Tarih</label>
+                            {{ log_form.date }}
+                            <div class="text-danger small">{{ log_form.date.errors }}</div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-bold small text-uppercase text-muted">Yapılan İşin Özeti</label>
+                            {{ log_form.description }}
+                            <div class="text-danger small">{{ log_form.description.errors }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer bg-light border-0 py-3 px-4" style="border-radius: 0 0 20px 20px;">
+                    <button type="button" class="btn btn-light rounded-pill px-4 fw-bold text-muted" data-bs-dismiss="modal">Vazgeç</button>
+                    <button type="submit" name="worklog_submit" class="btn btn-primary rounded-pill px-5 fw-bold shadow-sm">
+                        Kaydet <i class="fas fa-save ms-2"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if can_edit_roadmap %}
+<div class="modal fade" id="editRoadmapModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+      <div class="modal-header bg-primary text-white border-0 py-3 px-4" style="border-radius: 20px 20px 0 0;">
+        <h5 class="modal-title fw-bold">
+          <i class="fas fa-map-signs me-2"></i>Yol Haritasını Düzenle
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+
+      <form method="post" action="{% url 'roadmap_edit' task.pk %}">
+        {% csrf_token %}
+        <div class="modal-body p-4">
+          <div class="alert alert-light border d-flex align-items-start gap-3" role="alert">
+            <i class="fas fa-info-circle text-primary mt-1"></i>
+            <div class="small text-muted">
+              <div class="fw-bold text-dark mb-1">Format</div>
+              Her satır bir adım. İstersen “Açıklama | 2.5” şeklinde tahmini süre (saat) yazabilirsin.
+              <br>
+              <span class="text-muted">Bu alan 20 satırlık bir editör olarak tasarlanmıştır (satır sayısı zorunluluğu yoktur).</span>
+              <br>
+              <span class="text-muted">Not: Tamamlanmış adımlar sıralamaya (order) göre korunur.</span>
+            </div>
+          </div>
+
+          <label class="form-label fw-bold">Yol Haritası Metni</label>
+          <textarea name="roadmap_text" class="form-control" rows="20" required>{% for item in task.roadmap.all %}{{ item.description }}{% if item.estimated_duration %} | {{ item.estimated_duration }}{% endif %}
+{% endfor %}</textarea>
+        </div>
+
+        <div class="modal-footer bg-light border-0 py-3 px-4" style="border-radius: 0 0 20px 20px;">
+          <button type="button" class="btn btn-light rounded-pill px-4 fw-bold text-muted" data-bs-dismiss="modal">
+            Vazgeç
+          </button>
+          <button type="submit" class="btn btn-primary rounded-pill px-5 fw-bold shadow-sm">
+            Kaydet <i class="fas fa-save ms-2"></i>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}
